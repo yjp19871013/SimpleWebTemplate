@@ -1,0 +1,23 @@
+project:
+  version: 0.1
+  projectName: Simple
+  lowCaseProjectName: simple
+  packageName: simple
+  swaggerAppName: simple
+  urlPrefix: simple
+  buildName: simple
+  jwt_secret_key: key
+server:
+  port: PORT
+database:
+  username: "dbusername"
+  password: "password"
+  address: "localhost:3306"
+  schema: "simple"
+casbin:
+  config_file_path: config.yml path
+admin:
+  username: super username
+  password: super password
+  role: super user role name
+role_config_file_path: role define file(in deployment/bin/templates/deployment/config/role.yml)
