@@ -10,10 +10,10 @@ project:
 server:
   port: PORT
 database:
-  username: "dbusername"
-  password: "password"
-  address: "localhost:3306"
-  schema: "simple"
+  username: dbusername
+  password: password
+  address: localhost:3306
+  schema: simple
 casbin:
   config_file_path: config.yml path
 admin:

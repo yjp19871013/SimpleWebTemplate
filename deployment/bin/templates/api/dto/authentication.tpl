@@ -9,3 +9,8 @@ type GetAccessTokenResponse struct {
 	MsgResponse
 	AccessToken string `json:"accessToken" binding:"required,excludes= "`
 }
+
+type ChallengeResponse struct {
+	MsgResponse
+	Role        string `json:"role" binding:"required"`
+}

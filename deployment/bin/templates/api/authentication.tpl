@@ -6,6 +6,7 @@ import (
 	"{{ .ProjectConfig.PackageName }}/api/dto"
 	"{{ .ProjectConfig.PackageName }}/log"
 	"{{ .ProjectConfig.PackageName }}/service"
+	"{{ .ProjectConfig.PackageName }}/api/middleware"
 )
 
 // Challenge godoc
@@ -15,13 +16,33 @@ import (
 // @Accept  json
 // @Produce json
 // @Param Authorization header string true "Authentication header"
-// @Success 200 {object} dto.MsgResponse
-// @Failure 400 {object} dto.MsgResponse
-// @Failure 401 {object} dto.MsgResponse
-// @Failure 500 {object} dto.MsgResponse
+// @Success 200 {object} dto.ChallengeResponse
+// @Failure 400 {object} dto.ChallengeResponse
+// @Failure 401 {object} dto.ChallengeResponse
+// @Failure 500 {object} dto.ChallengeResponse
 // @Router /{{ .ProjectConfig.UrlPrefix }}/api/challenge [post]
 func Challenge(c *gin.Context) {
-	dto.Response200Json(c, "成功")
+	var err error
+
+    defer func() {
+        if err != nil {
+            log.Error("Challenge", err.Error())
+        }
+    }()
+
+    userInfo, err := middleware.GetContextUserInfo(c)
+    if err != nil {
+        c.JSON(http.StatusUnauthorized, dto.ChallengeResponse{
+            MsgResponse: dto.FormFailureMsgResponse("Token检查未通过", err),
+            Role:        userInfo.RoleName,
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, dto.ChallengeResponse{
+        MsgResponse: dto.FormSuccessMsgResponse("Token检查通过"),
+        Role:        userInfo.RoleName,
+    })
 }
 
 // GetAccessToken godoc

@@ -39,21 +39,21 @@ func initAdmin() error {
 	return nil
 }
 
-func CreateSuperAdminUser(username string, password string) (uint64, error) {
+func CreateSuperAdminUser(username string, password string) (*model.UserInfo, error) {
 	if utils.IsStringEmpty(username) || utils.IsStringEmpty(password) {
-		return 0, model.ErrParam
+		return nil, model.ErrParam
 	}
 
 	return createUser(username, password, adminUserRoleName)
 }
 
-func CreateCommonUser(username string, password string, roleName string) (uint64, error) {
+func CreateCommonUser(username string, password string, roleName string) (*model.UserInfo, error) {
 	if utils.IsStringEmpty(username) || utils.IsStringEmpty(password) || utils.IsStringEmpty(roleName) {
-		return 0, model.ErrParam
+		return nil, model.ErrParam
 	}
 
 	if roleName == adminUserRoleName {
-		return 0, model.ErrRoleNotExist
+		return nil, model.ErrRoleNotExist
 	}
 
 	return createUser(username, password, roleName)
@@ -127,14 +127,14 @@ func GetUserByToken(token string) (*model.UserInfo, error) {
 	return model.TransferUserToUserInfo(user), nil
 }
 
-func createUser(username string, password string, roleName string) (uint64, error) {
+func createUser(username string, password string, roleName string) (*model.UserInfo, error) {
 	roleExist, err := casbin.HasRole(roleName)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if !roleExist {
-		return 0, model.ErrRoleNotExist
+		return nil, model.ErrRoleNotExist
 	}
 
 	user := &db.User{
@@ -145,24 +145,24 @@ func createUser(username string, password string, roleName string) (uint64, erro
 
 	err = user.Create()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	err = casbin.AddRoleForUser(user.ID, user.Role)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return user.ID, err
+	return model.TransferUserToUserInfo(user), err
 }
 
-func GetUsers(pageNo int, pageSize int) ([]model.UserInfo, int64, error) {
-	users, err := db.NewUserQuery().NotUserName(adminUserName).Query(pageNo, pageSize)
+func GetUsers(userID uint64, pageNo int, pageSize int) ([]model.UserInfo, int64, error) {
+	users, err := db.NewUserQuery().SetID(userID).NotUserName(adminUserName).Query(pageNo, pageSize)
 	if err != nil && err != db.ErrUserNotExist {
 		return nil, 0, err
 	}
 
-	totalCount, err := db.NewUserQuery().NotUserName(adminUserName).Count()
+	totalCount, err := db.NewUserQuery().SetID(userID).NotUserName(adminUserName).Count()
 	if err != nil {
 		return nil, 0, err
 	}

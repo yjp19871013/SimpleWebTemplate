@@ -14,14 +14,15 @@ type (
 	}
 
 	AdminGetUsersQuery struct {
-		PageNo   int `form:"pageNo"`
-		PageSize int `form:"pageSize"`
+	    UserID   uint64 `form:"userId"`
+		PageNo   int    `form:"pageNo"`
+		PageSize int    `form:"pageSize"`
 	}
 )
 
 type CreateUserResponse struct {
 	MsgResponse
-	ID uint64 `json:"id" binding:"required"`
+	UserInfo UserInfoWithID `json:"userInfo" binding:"required"`
 }
 
 type GetUsersResponse struct {
