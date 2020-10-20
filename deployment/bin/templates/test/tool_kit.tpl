@@ -125,15 +125,13 @@ func (toolKit *ToolKit) Request(url string, method string) *ToolKit {
 }
 
 func (toolKit *ToolKit) GetAccessToken(username string, password string, retToken *string) *ToolKit {
-	getAccessTokenRequest := &dto.GetAccessTokenRequest{
-		Username: username,
-		Password: password,
-	}
-
 	getAccessTokenResponse := new(dto.GetAccessTokenResponse)
 
 	NewToolKit(toolKit.t).SetHeader("Content-Type", "application/json").
-		SetJsonBody(getAccessTokenRequest).
+		SetJsonBody(&dto.GetAccessTokenRequest{
+			Username: username,
+			Password: password,
+		}).
 		SetJsonResponse(getAccessTokenResponse).
 		Request("/{{ .ProjectConfig.UrlPrefix }}/api/getAccessToken", http.MethodPost).
 		AssertStatusCode(http.StatusOK).
@@ -157,28 +155,26 @@ func (toolKit *ToolKit) CreateUser(password string, role string, userInfo *dto.U
 
 	userName := "测试用户" + strings.Split(uuid, "-")[0]
 
-	createUserRequest := &dto.AdminCreateUserRequest{
-		Password: password,
-		UserInfo: dto.UserInfo{
-			Username: userName,
-			RoleName: role,
-		},
-	}
-
 	createUserResponse := new(dto.CreateUserResponse)
+	getUsersResponse := new(dto.GetUsersResponse)
+
 	NewToolKit(toolKit.t).SetToken(toolKit.token).
 		SetHeader("Content-Type", "application/json").
-		SetJsonBody(createUserRequest).
+		SetJsonBody(&dto.AdminCreateUserRequest{
+			Password: password,
+			UserInfo: dto.UserInfo{
+				Username: userName,
+				RoleName: role,
+			},
+		}).
 		SetJsonResponse(createUserResponse).
 		Request("/{{ .ProjectConfig.UrlPrefix }}/api/admin/user", http.MethodPost).
 		AssertStatusCode(http.StatusOK).
 		AssertEqual(true, createUserResponse.Success, createUserResponse.Msg).
 		AssertNotEqual(0, createUserResponse.UserInfo.ID).
 		AssertEqual(userName, createUserResponse.UserInfo.Username).
-		AssertEqual(role, createUserResponse.UserInfo.RoleName)
-
-	getUsersResponse := new(dto.GetUsersResponse)
-	NewToolKit(toolKit.t).SetToken(toolKit.token).
+		AssertEqual(role, createUserResponse.UserInfo.RoleName).
+		SetToken(toolKit.token).
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams("userId", strconv.FormatUint(createUserResponse.UserInfo.ID, 10)).
 		SetQueryParams("pageNo", "1").
@@ -206,7 +202,9 @@ func (toolKit *ToolKit) CreateUser(password string, role string, userInfo *dto.U
 
 func (toolKit *ToolKit) DeleteUser() *ToolKit {
 	deleteUserResponse := new(dto.MsgResponse)
+
 	NewToolKit(toolKit.t).SetToken(toolKit.token).
+		SetToken(toolKit.token).
 		SetHeader("Content-Type", "application/json").
 		SetJsonResponse(deleteUserResponse).
 		Request("/{{ .ProjectConfig.UrlPrefix }}/api/admin/user/"+strconv.FormatUint(toolKit.userInfo.ID, 10), http.MethodDelete).
