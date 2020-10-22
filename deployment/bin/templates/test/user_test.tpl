@@ -10,14 +10,16 @@ import (
 )
 
 func TestCreateUserAndDeleteUser(t *testing.T) {
-	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword, nil).
-		CreateUser(testUserPassword, adminRoleName, nil).
-		DeleteUser()
+    userInfo := new(dto.UserInfoWithID)
+
+	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword).
+		CreateUser(testUserPassword, adminRoleName, userInfo).
+		DeleteUser(userInfo.ID)
 }
 
 func TestGetAllUsers(t *testing.T) {
 	getUsersResponse := new(dto.GetUsersResponse)
-	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword, nil).
+	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword).
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams("pageNo", "0").
 		SetQueryParams("pageSize", "0").
@@ -31,7 +33,7 @@ func TestGetAllUsers(t *testing.T) {
 
 func TestGetUsersPaging(t *testing.T) {
 	getUsersResponse := new(dto.GetUsersResponse)
-	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword, nil).
+	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword).
 		SetHeader("Content-Type", "application/json").
 		SetQueryParams("pageNo", "1").
 		SetQueryParams("pageSize", "10").
@@ -44,12 +46,12 @@ func TestGetUsersPaging(t *testing.T) {
 }
 
 func TestUpdateUserPassword(t *testing.T) {
-	var newToken string
 	userInfo := new(dto.UserInfoWithID)
 	updateUserPasswordResponse := new(dto.MsgResponse)
 
-	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword, nil).
-		CreateUser(testUserPassword, adminRoleName, userInfo).SetHeader("Content-Type", "application/json").
+	NewToolKit(t).GetAccessToken(superAdminUsername, superAdminPassword).
+		CreateUser(testUserPassword, adminRoleName, userInfo).
+		SetHeader("Content-Type", "application/json").
 		SetJsonBody(&dto.AdminUpdateUserPasswordRequest{
 			ID:       userInfo.ID,
 			Password: "456",
@@ -58,10 +60,9 @@ func TestUpdateUserPassword(t *testing.T) {
 		Request("/{{ .ProjectConfig.UrlPrefix }}/api/admin/user", http.MethodPut).
 		AssertStatusCode(http.StatusOK).
 		AssertEqual(true, updateUserPasswordResponse.Success, updateUserPasswordResponse.Msg).
-		GetAccessToken(userInfo.Username, "456", &newToken).
-		AssertNotEmpty(newToken).
-		GetAccessToken(superAdminUsername, superAdminPassword, nil).
-		DeleteUser()
+		GetAccessToken(userInfo.Username, "456").
+		GetAccessToken(superAdminUsername, superAdminPassword).
+		DeleteUser(userInfo.ID)
 }
 
 func (toolKit *ToolKit) CreateUser(password string, role string, userInfo *dto.UserInfoWithID) *ToolKit {
@@ -105,8 +106,6 @@ func (toolKit *ToolKit) CreateUser(password string, role string, userInfo *dto.U
 		AssertEqual(createUserResponse.UserInfo.Username, getUsersResponse.Infos[0].Username).
 		AssertEqual(createUserResponse.UserInfo.RoleName, getUsersResponse.Infos[0].RoleName)
 
-	toolKit.userInfo = &createUserResponse.UserInfo
-
 	if userInfo != nil {
 		createUserResponseUserInfo := createUserResponse.UserInfo
 		userInfo.ID = createUserResponseUserInfo.ID
@@ -117,18 +116,16 @@ func (toolKit *ToolKit) CreateUser(password string, role string, userInfo *dto.U
 	return toolKit
 }
 
-func (toolKit *ToolKit) DeleteUser() *ToolKit {
+func (toolKit *ToolKit) DeleteUser(userID uint64) *ToolKit {
 	deleteUserResponse := new(dto.MsgResponse)
 
 	NewToolKit(toolKit.t).SetToken(toolKit.token).
 		SetToken(toolKit.token).
 		SetHeader("Content-Type", "application/json").
 		SetJsonResponse(deleteUserResponse).
-		Request("/{{ .ProjectConfig.UrlPrefix }}/api/admin/user/"+strconv.FormatUint(toolKit.userInfo.ID, 10), http.MethodDelete).
+		Request("/{{ .ProjectConfig.UrlPrefix }}/api/admin/user/"+strconv.FormatUint(userID, 10), http.MethodDelete).
 		AssertStatusCode(http.StatusOK).
 		AssertEqual(true, deleteUserResponse.Success, deleteUserResponse.Msg)
-
-	toolKit.userInfo = nil
 
 	return toolKit
 }
